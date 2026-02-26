@@ -1,12 +1,14 @@
 package de.nicolas;
 
-import com.badlogic.gdx.Game;
-import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.*;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
+import com.badlogic.gdx.graphics.FPSLogger;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.profiling.GLProfiler;
 import com.badlogic.gdx.utils.GdxRuntimeException;
+import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import de.nicolas.asset.AssetService;
@@ -27,10 +29,14 @@ public class GDXGame extends Game {
 
     private AssetService assetService;
 
+    private GLProfiler glProfiler;
+    private FPSLogger fpsLogger;
+
     private final Map<Class<? extends Screen>, Screen> screenCache = new HashMap<>();
 
     @Override
     public void create() {
+        Gdx.app.setLogLevel(Application.LOG_DEBUG);
 
         batch = new SpriteBatch();
 
@@ -38,6 +44,10 @@ public class GDXGame extends Game {
         viewport = new FitViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
 
         assetService = new AssetService(new InternalFileHandleResolver());
+
+        glProfiler = new GLProfiler(Gdx.graphics);
+        glProfiler.enable();
+        fpsLogger = new FPSLogger();
 
         addScreen(new GameScreen(this));
         setScreen(GameScreen.class);
@@ -62,6 +72,18 @@ public class GDXGame extends Game {
             throw new GdxRuntimeException("No screen with class " + screenClass + "found in the screen cache.");
         }
         super.setScreen(screen);
+    }
+
+    @Override
+    public void render() {
+        glProfiler.reset();
+
+        ScreenUtils.clear(0f, 0f,0f, 1f);
+
+        super.render();
+
+        Gdx.graphics.setTitle("Mystic Tutorial - Draw Calls: " + glProfiler.getDrawCalls());
+        fpsLogger.log();
     }
 
     @Override
